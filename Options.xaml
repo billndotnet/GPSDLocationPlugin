@@ -1,0 +1,21 @@
+﻿<ResourceDictionary
+    x:Class="BillNash.NINA.GpsdLocationPlugin.Options"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+
+    <DataTemplate x:Key="GPSD Location Plugin_Options">
+        <StackPanel Orientation="Vertical">
+            <StackPanel Orientation="Horizontal">
+                <TextBlock Text="GPSD Hostname/IP:" />
+                <TextBox MinWidth="150" Text="{Binding GpsdHostname}" />
+            </StackPanel>
+            <StackPanel Orientation="Horizontal">
+                <TextBlock Text="Port Number:" />
+                <TextBox MinWidth="50" Text="{Binding GpsdPort}" />
+            </StackPanel>
+            <Button Content="Check" Command="{Binding CheckGpsdCommand}" />
+            <Button Content="Apply" Command="{Binding ApplyGpsdSettingsCommand}" />
+            <TextBlock Text="{Binding StatusMessage}" Foreground="Red" />
+        </StackPanel>
+    </DataTemplate>
+</ResourceDictionary>

@@ -13,8 +13,8 @@
                 <TextBlock Text="Port Number:" />
                 <TextBox MinWidth="50" Text="{Binding GpsdPort}" />
             </StackPanel>
-            <Button Content="Check" Command="{Binding CheckGpsdCommand}" />
-            <Button Content="Apply" Command="{Binding ApplyGpsdSettingsCommand}" />
+            <Button Content="Check" Width="100" Command="{Binding CheckGpsdCommand}" />
+            <Button Content="Apply" Width="100" Command="{Binding ApplyGpsdSettingsCommand}" />
             <TextBlock Text="{Binding StatusMessage}" Foreground="Red" />
         </StackPanel>
     </DataTemplate>

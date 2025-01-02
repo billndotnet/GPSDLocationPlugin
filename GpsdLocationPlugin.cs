@@ -1,22 +1,17 @@
 ﻿using NINA.Astrometry;
-using NINA.Plugin.Interfaces;
 using NINA.Plugin;
-using static NINA.Equipment.SDK.CameraSDKs.PlayerOneSDK.PlayerOneFilterWheelSDK;
-using System.ComponentModel.Composition;
+using NINA.Plugin.Interfaces;
+using NINA.Profile;
+using NINA.Profile.Interfaces;
+using System;
 using System.ComponentModel;
+using System.ComponentModel.Composition;
 using System.IO;
 using System.Net.Sockets;
 using System.Runtime.CompilerServices;
 using System.Windows.Input;
-using System;
 
 namespace BillNash.NINA.GpsdLocationPlugin {
-    /// <summary>
-    /// This is a GPSD interface plugin for NINA.It gets gps information from a gpsd server. Then it tells NINA to update the location.
-    /// 
-    /// That's it. It's a simple plugin.
-    /// 
-    /// </summary>
     [Export(typeof(IPluginManifest))]
     public class GpsdLocationPlugin : PluginBase, INotifyPropertyChanged {
         private string gpsdHostname;
@@ -26,13 +21,19 @@ namespace BillNash.NINA.GpsdLocationPlugin {
         private string timeData;
         private string altitudeData;
 
-        private ObserverInfo observerInfo;
+        private IProfileService profileService; // Declare the profileService field
+
+        [ImportingConstructor]
+        public GpsdLocationPlugin(IProfileService profileService) {
+            this.profileService = profileService;
+        }
 
         public string GpsdHostname {
             get => gpsdHostname;
             set {
                 gpsdHostname = value;
                 RaisePropertyChanged();
+                SaveSettings();
             }
         }
 
@@ -41,6 +42,7 @@ namespace BillNash.NINA.GpsdLocationPlugin {
             set {
                 gpsdPort = value;
                 RaisePropertyChanged();
+                SaveSettings();
             }
         }
 
@@ -76,9 +78,25 @@ namespace BillNash.NINA.GpsdLocationPlugin {
             }
         }
 
+        private void SaveSettings() {
+            try {
+                // Assuming profileService.ActiveProfile.PluginSettings is the correct place to save these settings
+                var pluginSettings = profileService.ActiveProfile.PluginSettings as PluginSettings;
+                if (pluginSettings != null) {
+                    pluginSettings.GpsdHostname = gpsdHostname;
+                    pluginSettings.GpsdPort = gpsdPort;
+                    profileService.ActiveProfile.Save();
+                    StatusMessage = "Settings saved successfully!";
+                } else {
+                    StatusMessage = "Failed to save settings.";
+                }
+            } catch (Exception ex) {
+                StatusMessage = $"Failed to save settings: {ex.Message}";
+            }
+        }
+
         public ICommand CheckGpsdCommand => new CommunityToolkit.Mvvm.Input.RelayCommand(CheckGpsdConnection);
         public ICommand ApplyGpsdSettingsCommand => new CommunityToolkit.Mvvm.Input.RelayCommand(ApplyGpsdSettings);
-
 
         public event PropertyChangedEventHandler PropertyChanged;
 
@@ -117,47 +135,50 @@ namespace BillNash.NINA.GpsdLocationPlugin {
         }
 
         private void ApplyGpsdSettings() {
-            try {
-                if (observerInfo == null) {
-                    StatusMessage = "Observer info is not initialized.";
-                    return;
-                }
+           
+            // Ensure LocationData is available
+            if (string.IsNullOrEmpty(LocationData)) {
+                StatusMessage = "Location data is not available.";
+                return;
+             }
 
-                // Assume LocationData is in the format "Latitude: {lat}, Longitude: {lon}"
-                if (string.IsNullOrEmpty(LocationData)) {
-                    StatusMessage = "Location data is not available.";
-                    return;
-                }
-
-                var locationParts = LocationData.Split(',');
-                if (locationParts.Length < 2) {
+            // Parse the location data
+            var locationParts = LocationData.Split(',');
+            if (locationParts.Length < 2) {
                     StatusMessage = "Location data format is incorrect.";
                     return;
+             }
+
+
+            // Split up location data into two pieces: latitude and longitude
+            var latitude = double.Parse(locationParts[0].Split(':')[1].Trim());
+            var longitude = double.Parse(locationParts[1].Split(':')[1].Trim());
+
+            // Parse altitude if available
+            var altitude = 0.0;
+            if (!string.IsNullOrEmpty(AltitudeData)) {
+                altitude = double.Parse(AltitudeData.Split(':')[1].Trim());
+            }
+         
+            try {
+                // Update the active profile's astrometry settings
+                var astroSettings = profileService.ActiveProfile.AstrometrySettings as AstrometrySettings;
+                if (astroSettings != null) {
+                    profileService.ChangeLatitude(latitude);
+                    profileService.ChangeLongitude(longitude);
+                    profileService.ChangeElevation(altitude);
+
+                    // Save the profile to ensure changes are persisted
+                    profileService.ActiveProfile.Save();
+
+
+                    StatusMessage = "Location data applied to astrometry settings successfully!";
+                } else {
+                    StatusMessage = "Failed to apply location data to astrometry settings.";
                 }
-
-                var latitude = double.Parse(locationParts[0].Split(':')[1].Trim());
-                var longitude = double.Parse(locationParts[1].Split(':')[1].Trim());
-
-                // Parse altitude
-                var altitude = 0.0;
-                if (!string.IsNullOrEmpty(AltitudeData)) {
-                    altitude = double.Parse(AltitudeData.Split(':')[1].Trim());
-                }
-
-                // Update the observer info
-                observerInfo.Latitude = latitude;
-                observerInfo.Longitude = longitude;
-                observerInfo.Elevation = altitude; // Apply altitude
-
-                StatusMessage = "Location data applied to observer info successfully!";
             } catch (Exception ex) {
                 StatusMessage = $"Failed to apply location data: {ex.Message}";
             }
-
-            // Save settings to user settings
-            Properties.Settings.Default.GpsdHostname = GpsdHostname;
-            Properties.Settings.Default.GpsdPort = GpsdPort;
-            Properties.Settings.Default.Save();
         }
     }
 }

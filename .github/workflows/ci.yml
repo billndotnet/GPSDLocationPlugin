@@ -1,0 +1,35 @@
+name: Build
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+
+jobs:
+  build:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '8.0.x'
+      - name: Restore dependencies
+        run: dotnet restore
+      - name: Build
+        run: dotnet build GPSDLocationPlugin.csproj --configuration Release --no-restore
+      - name: Pack
+        run: dotnet pack GPSDLocationPlugin.csproj --configuration Release --no-build --output ./artifacts
+      - name: Zip plugin
+        shell: pwsh
+        run: |
+          $dll = Get-Item ./bin/Release/net8.0-windows/BillNash.NINA.GpsdLocationPlugin.dll
+          Compress-Archive -Path $dll.FullName -DestinationPath ./plugin.zip
+      - uses: actions/upload-artifact@v4
+        with:
+          name: plugin
+          path: plugin.zip
+      - uses: actions/upload-artifact@v4
+        with:
+          name: package
+          path: artifacts

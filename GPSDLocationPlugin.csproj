@@ -8,6 +8,15 @@
     <UseWPF>true</UseWPF>
     <ImportWindowsDesktopTargets>true</ImportWindowsDesktopTargets>
     <EnableWindowsTargeting>true</EnableWindowsTargeting>
+    <!-- Package metadata for CI builds -->
+    <PackageId>BillNash.NINA.GpsdLocationPlugin</PackageId>
+    <Version>1.0.0.1</Version>
+    <Authors>Bill Nash</Authors>
+    <Company>Bill Nash</Company>
+    <Description>GPSD interface for NINA</Description>
+    <PackageLicenseFile>LICENSE.txt</PackageLicenseFile>
+    <PackageProjectUrl>https://github.com/billndotnet/GPSDLocationPlugin</PackageProjectUrl>
+    <RepositoryUrl>https://github.com/billndotnet/GPSDLocationPlugin</RepositoryUrl>
   </PropertyGroup>
   <ItemGroup>
     <PackageReference Include="NINA.Plugin" Version="3.0.0.2017-beta" />

@@ -99,3 +99,5 @@ orleans.codegen.cs
 /NINA/Resources/StaticResources/ArrowLeft.xaml
 Accord.dll.config
 *.zip
+artifacts/
+plugin.zip
